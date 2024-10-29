@@ -5,8 +5,9 @@ Current scope: Windows only
 * Break OTK into multiple smaller parts
 * fetch master password from windows credential manager
 * Encrypt and hold master password in memory using OTK
-* Ingest credentials
+* Ingest credentials and an identifier (Service or URL)
 * encrypt credentials using OTK and store in a encrypted file using a master password to encrypt
+* encrypted credentials will also be stored in a map using a hash of their identifier
 
 ### Storing credentials in memory
 As storing credentials in memory can potentially leaked by side channel attacks, we will encrypt this data while in memory
