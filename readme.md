@@ -13,3 +13,7 @@ Current scope: Windows only
 As storing credentials in memory can potentially leaked by side channel attacks, we will encrypt this data while in memory
 When required, the credentials can be decrypted using the OTK, used, and then re-encrypted 
 Memory to store the clear-text credentials needs to be secure cleared once the credential has been used
+
+
+## Diagram
+![](./Resources/Diagram/CredentialManager.jpg)
