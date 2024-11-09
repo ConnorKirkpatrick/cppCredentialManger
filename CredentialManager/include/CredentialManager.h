@@ -39,7 +39,7 @@ class Manager
     static const uint8_t segments = 4;
     static const uint8_t IVSize = 32;
     static const uint8_t UUIDSize = 56;
-    static const uint8_t rounds = 1000;
+    static const uint16_t rounds = 1000;
     ErrorCode status = ErrorCode::SUCCESS;
     BYTE PRK[keySize];
 
