@@ -1,9 +1,13 @@
+#include <array>
+#include <cstdint>
 #include <map>
+#include <utility>
 #include <vector>
 #include <windows.h>
 
 namespace CredentialManager
 {
+
 enum class ErrorCode
 {
     SUCCESS,
@@ -21,12 +25,24 @@ class Manager
      * the manager.
      */
     Manager();
+    /**
+     * @brief Tear-down of the credential manager object. This needs to destroy the PRK data (if present), and the
+     * individual PRK parts stored in memory. In future this will also need to write the encrypted passwords to a
+     * persistent file and then destroy the password list.
+     */
     ~Manager();
-    ErrorCode ready = ErrorCode::SUCCESS;
+
+    ErrorCode getStatus();
 
   private:
-    BYTE PRK[128];
-    uint8_t segments = 4;
+    static const uint8_t keySize = 128;
+    static const uint8_t segments = 4;
+    static const uint8_t IVSize = 32;
+    static const uint8_t UUIDSize = 56;
+    static const uint8_t rounds = 1000;
+    ErrorCode status = ErrorCode::SUCCESS;
+    BYTE PRK[keySize];
+
     std::vector<BYTE *> prkParts;
     std::map<char, char> credentialMemory;
 

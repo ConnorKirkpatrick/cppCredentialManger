@@ -13,9 +13,8 @@
 
 CHAR wide2Narrow(WCHAR w);
 
-CredentialManager::Manager::Manager()
+CredentialManager::Manager::Manager() : status(generatePRK())
 {
-    generatePRK();
 }
 
 CredentialManager::Manager::~Manager()
@@ -23,6 +22,10 @@ CredentialManager::Manager::~Manager()
     // delete each reference to the PRK
     destroyPRK();
     destroyPRKParts();
+}
+CredentialManager::ErrorCode CredentialManager::Manager::getStatus()
+{
+    return status;
 };
 
 CHAR wide2Narrow(WCHAR w)
@@ -32,18 +35,18 @@ CHAR wide2Narrow(WCHAR w)
 
 CredentialManager::ErrorCode CredentialManager::Manager::generatePRK()
 {
-    BYTE IV[32];
-    BCRYPT_ALG_HANDLE randomProvider;
-    BCRYPT_ALG_HANDLE derivationProvider;
+    BYTE IV[IVSize];
+    BCRYPT_ALG_HANDLE randomProvider = nullptr;
+    BCRYPT_ALG_HANDLE derivationProvider = nullptr;
 
     // Generate the IV
-    NTSTATUS cryptoStatus = BCryptOpenAlgorithmProvider(&randomProvider, BCRYPT_RNG_ALGORITHM, NULL, NULL);
+    NTSTATUS cryptoStatus = BCryptOpenAlgorithmProvider(&randomProvider, BCRYPT_RNG_ALGORITHM, nullptr, NULL);
     // BCRYPT_PROV_DISPATCH);
     if (cryptoStatus != STATUS_SUCCESS)
     {
         return ErrorCode::NOT_ADMIN;
     }
-    cryptoStatus = BCryptGenRandom(randomProvider, IV, 32, 0);
+    cryptoStatus = BCryptGenRandom(randomProvider, IV, IVSize, 0);
     if (cryptoStatus != STATUS_SUCCESS)
     {
         return ErrorCode::INVALID_VALUE;
@@ -60,23 +63,20 @@ CredentialManager::ErrorCode CredentialManager::Manager::generatePRK()
         return ErrorCode::GENERAL_ERROR;
     }
     WCHAR *GUID = hwID.szHwProfileGuid;
-    unsigned char UUID[56]{};
+    unsigned char UUID[UUIDSize]{};
     // windows GUID is only 54 bytes
-    for (int i = 0; i < 56; i++)
+    for (int i = 0; i < UUIDSize; i++)
     {
         UUID[i] = wide2Narrow(GUID[i]);
     }
 
-    // combine the IV and UUID (32 + 56)
-    unsigned char UUIV[88];
-    memcpy(UUIV, IV, 32);
-    memcpy(UUIV + 32, UUID, 56);
-    SecureZeroMemory(&IV, 32);
-    // SecureZeroMemory(&UUID, 56);
-    //  SecureZeroMemory(&GUID, 56);
-    //   generate the PRK
+    // combine the IV and UUID (IVSize + UUIDSize)
+    unsigned char UUIV[IVSize + UUIDSize];
+    memcpy(UUIV, IV, IVSize);
+    memcpy(UUIV + IVSize, UUID, UUIDSize);
+    SecureZeroMemory(&IV, IVSize);
     cryptoStatus =
-        BCryptOpenAlgorithmProvider(&derivationProvider, BCRYPT_SHA512_ALGORITHM, NULL, BCRYPT_ALG_HANDLE_HMAC_FLAG);
+        BCryptOpenAlgorithmProvider(&derivationProvider, BCRYPT_SHA512_ALGORITHM, nullptr, BCRYPT_ALG_HANDLE_HMAC_FLAG);
     // BCRYPT_PROV_DISPATCH);
     if (cryptoStatus != STATUS_SUCCESS)
     {
@@ -84,8 +84,8 @@ CredentialManager::ErrorCode CredentialManager::Manager::generatePRK()
     }
     // derive PRK from the combined IV and HWID
     // pass in the salt, salt length, iterations, keyOut, size of keyOut, flags
-    cryptoStatus = BCryptDeriveKeyPBKDF2(derivationProvider, NULL, NULL, static_cast<PUCHAR>(UUIV), sizeof(UUIV), 1000,
-                                         PRK, 128, 0);
+    cryptoStatus = BCryptDeriveKeyPBKDF2(derivationProvider, nullptr, NULL, static_cast<PUCHAR>(UUIV), sizeof(UUIV),
+                                         rounds, PRK, keySize, 0);
     if (cryptoStatus != STATUS_SUCCESS)
     {
         return ErrorCode::GENERAL_ERROR;
@@ -96,23 +96,23 @@ CredentialManager::ErrorCode CredentialManager::Manager::generatePRK()
         return ErrorCode::INVALID_VALUE;
     }
     // Destroy the cryptographic data used to create the PRK
-    SecureZeroMemory(&UUIV, 88);
+    SecureZeroMemory(&UUIV, IVSize + UUIDSize);
 
     //// For how ever many segments the user has chosen, store these into the
     /// parts + vector
     prkParts.resize(segments);
     for (int i = 0; i < segments; i++)
     {
-        BYTE *PRK_SEG = (BYTE *)malloc(sizeof(BYTE) * (128 / 4));
-        if (PRK_SEG == NULL)
+        BYTE *PRK_SEG = (BYTE *)malloc(sizeof(BYTE) * (keySize / segments));
+        if (PRK_SEG == nullptr)
         {
             destroyPRK();
             destroyPRKParts();
             return ErrorCode::GENERAL_ERROR;
         }
-        VirtualLock(PRK_SEG, 128 / 4);
-        // BYTE PRK_SEG[128 / 4];
-        memcpy(PRK_SEG, PRK + (128 / segments) * i, 128 / segments);
+        VirtualLock(PRK_SEG, keySize / segments);
+        // BYTE PRK_SEG[keySize / 4];
+        memcpy(PRK_SEG, PRK + (keySize / segments) * i, keySize / segments);
         prkParts[i] = PRK_SEG;
     }
     // Destroy the plain PRK in memory
@@ -124,16 +124,16 @@ CredentialManager::ErrorCode CredentialManager::Manager::constructPRK()
 {
     for (int i = 0; i < segments; i++)
     {
-        BYTE PRK_SEG[128 / 4];
-        memcpy_s(&PRK_SEG, 128 / segments, &PRK + ((128 / segments) * i), 128 / segments);
-        SecureZeroMemory(&PRK_SEG, 128 / segments);
+        BYTE PRK_SEG[keySize / 4];
+        memcpy_s(&PRK_SEG, keySize / segments, &PRK + ((keySize / segments) * i), keySize / segments);
+        SecureZeroMemory(&PRK_SEG, keySize / segments);
     }
     return ErrorCode::SUCCESS;
 }
 
 CredentialManager::ErrorCode CredentialManager::Manager::destroyPRK()
 {
-    SecureZeroMemory(&PRK, 128);
+    SecureZeroMemory(&PRK, keySize);
     return ErrorCode::SUCCESS;
 }
 
@@ -145,7 +145,7 @@ void CredentialManager::Manager::destroyPRKParts()
     }
     for (int i = 0; i < segments; i++)
     {
-        SecureZeroMemory(prkParts.at(i), (128 / segments));
+        SecureZeroMemory(prkParts.at(i), (keySize / segments));
         free(prkParts.at(i));
     }
 }
