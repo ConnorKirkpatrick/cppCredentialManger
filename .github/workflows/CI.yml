@@ -6,7 +6,7 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
+    branches: [ "setupManager" ]
   pull_request:
     branches: [ "main" ]
 
@@ -33,4 +33,4 @@ jobs:
       - name: Compile Visual Studio project with MSBuild
         shell: cmd 
         run: ${{ '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" && msbuild' }}
-        working-directory: path/to/your/project
+        working-directory: CredentialManager
