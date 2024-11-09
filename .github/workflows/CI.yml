@@ -31,5 +31,5 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Compile Visual Studio project with MSBuild
         shell: cmd 
-        run: ${{ '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" && msbuild /p:Configuration=Release CredentialManager.vcxproj' }}
+        run: ${{ '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" && msbuild /p:Configuration=Release /p:AdditionalIncludeDirectories=include\ CredentialManager.vcxproj' }}
         working-directory: CredentialManager
