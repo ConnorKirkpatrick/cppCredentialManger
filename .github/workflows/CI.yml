@@ -23,13 +23,9 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world! && dir
-
+  
       # Runs a set of commands using the runners shell
       - name: Compile Visual Studio project with CL.exe
         shell: cmd 
-        run: ${{ '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" && msbuild /p:Configuration=Release /p:Platform=x64 -verbosiy:quiet && dir' }}
+        run: ${{ '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" && msbuild -v:q /p:Configuration=Release /p:Platform=x64 && dir' }}
         working-directory: CredentialManager
