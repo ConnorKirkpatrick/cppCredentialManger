@@ -3,7 +3,7 @@ name: CI
 # Controls when the workflow will run
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -37,3 +37,7 @@ jobs:
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v2
+
+      - name: build project using msbuild
+        shell: cmd
+        run: msbuild -v:q /p:Configuration=Release /p:Platform=x64 /consoleloggerparameters:ErrorsOnly cppCredentialManager.sln
