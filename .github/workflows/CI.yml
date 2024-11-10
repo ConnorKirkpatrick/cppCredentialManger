@@ -27,5 +27,4 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Compile Visual Studio project with CL.exe
         shell: cmd 
-        run: ${{ '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" && msbuild -v:q /p:Configuration=Release /p:Platform=x64 /consoleloggerparameters:ErrorsOnly && dir' }}
-        working-directory: CredentialManager
+        run: ${{ '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" && msbuild -v:q /p:Configuration=Release /p:Platform=x64 /consoleloggerparameters:ErrorsOnly cppCredentialManager.sln && dir' }}
