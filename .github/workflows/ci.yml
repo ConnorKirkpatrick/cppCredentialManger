@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 3
 
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     # Permissions are controlled by the ${{ github.token }}/${GITHUB_TOKEN} secret.
     # If not configured it has max permissions. You should configure the permissions on the job level.
@@ -35,8 +35,5 @@ jobs:
       - name: Checkout ${{ github.ref }} from ${{ github.repository }}
         uses: actions/checkout@v4
 
-      # Runs a set of commands using the runners shell
-      - name: Compile Visual Studio project with MSBuild
-        shell: cmd 
-        run: ${{ '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" && msbuild' }}
-        working-directory: path/to/your/project
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
