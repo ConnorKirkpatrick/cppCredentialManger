@@ -14,6 +14,14 @@ As storing credentials in memory can potentially leaked by side channel attacks,
 When required, the credentials can be decrypted using the OTK, used, and then re-encrypted 
 Memory to store the clear-text credentials needs to be secure cleared once the credential has been used
 
+### Useful windows functions
+*  bcrypt.h
+    * DeriveKeyPBKDF2 - Generate key from secret
+    * Encrypt - encrypt a block of data
+    * Decrypt - decrypt a block of data
+    * Hash - generate a hash of data
+    * GenRandom - generate a random value
+* GetCurrentHwProfile - get local hardware ID
 
 ## Diagram
 ![](./Resources/Diagram/CredentialManager.jpg)
